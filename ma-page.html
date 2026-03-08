@@ -1,15 +1,60 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Ma premi��re page</title>
-    <style>
-        body {font-family: Arial, sans-serif; margin: 2rem;}
-        h1   {color: #2c3e50;}
-    </style>
+  <meta charset="UTF-8">
+  <title>Chat test sur Firebase</title>
+
+  <!-- 1️⃣ Inclure le SDK Firebase (version CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
-    <h1>Bonjour !</h1>
-    <p>Ceci est ma première page HTML créée sous Windows.</p>
+  <h1>Démo de chat Firebase</h1>
+
+  <!-- Bouton qui envoie le message "test" -->
+  <button id="sendBtn">Envoyer « test »</button>
+
+  <!-- Zone où les messages seront affichés (facultatif) -->
+  <ul id="messages"></ul>
+
+  <script>
+    // 2️⃣ Configuration du projet – remplacez les valeurs par celles de votre projet
+    const firebaseConfig = {
+      apiKey: "AIzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
+      authDomain: "test-c59b4.firebaseapp.com",
+      databaseURL: "https://test-c59b4-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "test-c59b4",
+      storageBucket: "test-c59b4.firebasestorage.app",
+      messagingSenderId: "249535021863",
+      appId: "1:249535021863:web:43b75f582080b3ee82df02"
+    };
+
+    // Initialise Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Référence à la collection /messages
+    const messagesRef = db.ref('messages');
+
+    // Fonction d’envoi du message "test"
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      const newMsg = {
+        text: "test",
+        timestamp: Date.now()
+      };
+      messagesRef.push(newMsg);
+    });
+
+    // (Optionnel) Afficher les messages en temps réel
+    messagesRef.on('value', snapshot => {
+      const list = document.getElementById('messages');
+      list.innerHTML = ''; // vider la liste
+      snapshot.forEach(child => {
+        const li = document.createElement('li');
+        li.textContent = child.val().text;
+        list.appendChild(li);
+      });
+    });
+  </script>
 </body>
 </html>
