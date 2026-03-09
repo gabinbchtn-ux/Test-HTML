@@ -2,13 +2,13 @@
    0️⃣ CONFIGURATION FIREBASE (à remplacer par vos valeurs)
    ========================================================= */
 const firebaseConfig = {
-  apiKey: "AIzaSyCFFI_TOzVlWX1GCAZW4tsx-Z80qqgkXpM",
-  authDomain: "partage-e313d.firebaseapp.com",
-  databaseURL: "https://partage-e313d-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "partage-e313d",
-  storageBucket: "partage-e313d.firebasestorage.app",
-  messagingSenderId: "815247760270",
-  appId: "1:815247760270:web:f079ba6b1a8e22439462df"
+ apiKey: "AIzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
+    authDomain: "test-c59b4.firebaseapp.com",
+    databaseURL: "https://test-c59b4-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "test-c59b4",
+    storageBucket: "test-c59b4.firebasestorage.app",
+    messagingSenderId: "249535021863",
+    appId: "1:249535021863:web:43b75f582080b3ee82df02"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -81,3 +81,4 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 }); // ← fin DOMContentLoaded
+
