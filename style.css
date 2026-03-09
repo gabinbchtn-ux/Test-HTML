@@ -53,29 +53,37 @@ const sendBtn = document.getElementById('sendBtn');
    AUTHENTIFICATION AVEC FIREBASE AUTH
    ===================================================== */
 async function loginWithCode(code) {
-  const authData = AUTH_CODES[code];
-  if (!authData) {
-    authError.textContent = 'Code invalide';
-    return false;
-  }
-
   try {
-    // 1️⃣ Se connecter anonymement à Firebase Auth
+    // 1️⃣ Récupérer les codes depuis Firebase
+    const codesSnapshot = await db.ref('auth_codes').once('value');
+    const codesData = codesSnapshot.val();
+    
+    if (!codesData || !codesData[code]) {
+      authError.textContent = 'Code invalide';
+      return false;
+    }
+    
+    const authData = codesData[code];
+    
+    // 2️⃣ Continuer avec Firebase Auth...
     const userCredential = await auth.signInAnonymously();
     const userId = userCredential.user.uid;
-
-    // 2️⃣ Générer un pseudo basé sur le rôle
-    const pseudo = `${authData.role.charAt(0).toUpperCase() + authData.role.slice(1)}_${Math.floor(Math.random() * 1000)}`;
-
-    // 3️⃣ Stocker les informations utilisateur dans la base
+    
+    // 3️⃣ Stocker les infos utilisateur
     await db.ref(`users/${userId}`).set({
-      username: pseudo,
+      username: `${authData.role.charAt(0).toUpperCase() + authData.role.slice(1)}_${Math.floor(Math.random() * 1000)}`,
       role: authData.role,
       label: authData.label,
-      code: code,
-      createdAt: Date.now(),
-      lastSeen: Date.now()
+      createdAt: Date.now()
     });
+    
+    // ... suite du code
+  } catch (error) {
+    console.error('Erreur:', error);
+    authError.textContent = 'Erreur de connexion';
+    return false;
+  }
+}
 
     // 4️⃣ Mettre à jour l'utilisateur courant
     currentUser = {
@@ -282,3 +290,4 @@ window.addEventListener('load', () => {
     }
   });
 });
+
