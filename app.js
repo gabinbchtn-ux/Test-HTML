@@ -1,4 +1,5 @@
-/*   CONFIGURATION FIREBASE
+/* =====================================================
+   CONFIGURATION FIREBASE
    Remplacez par vos propres valeurs depuis la console Firebase
    ===================================================== */
 const firebaseConfig = {
@@ -11,8 +12,10 @@ const firebaseConfig = {
     appId: "1:249535021863:web:43b75f582080b3ee82df02"
 };
 
+// Initialiser Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
 const chatRef = db.ref('chat/messages');
 
 /* =====================================================
@@ -20,9 +23,9 @@ const chatRef = db.ref('chat/messages');
    Modifiez ces codes selon vos besoins
    ===================================================== */
 const AUTH_CODES = {
-  '3756': { role: 'admin', label: '👑 Admin' },
-  'MOD020':   { role: 'moderator', label: '🛡️ Modérateur' },
-  'USER843':  { role: 'visitor', label: '👤 Visiteur' }
+  'ADMIN123': { role: 'admin', label: '👑 Admin' },
+  'MOD456':   { role: 'moderator', label: '🛡️ Modérateur' },
+  'USER789':  { role: 'visitor', label: '👤 Visiteur' }
 };
 
 /* =====================================================
@@ -47,49 +50,72 @@ const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 
 /* =====================================================
-   AUTHENTIFICATION
+   AUTHENTIFICATION AVEC FIREBASE AUTH
    ===================================================== */
-function authenticate(code) {
+async function loginWithCode(code) {
   const authData = AUTH_CODES[code];
   if (!authData) {
-    authError.textContent = 'Tu te trompe :)';
+    authError.textContent = 'Code invalide';
     return false;
   }
 
-  // Générer un pseudo basé sur le rôle et un nombre aléatoire
-  const pseudo = `${authData.role.charAt(0).toUpperCase() + authData.role.slice(1)}_${Math.floor(Math.random() * 1000)}`;
+  try {
+    // 1️⃣ Se connecter anonymement à Firebase Auth
+    const userCredential = await auth.signInAnonymously();
+    const userId = userCredential.user.uid;
 
-  currentUser = {
-    code: code,
-    role: authData.role,
-    label: authData.label,
-    username: pseudo
-  };
+    // 2️⃣ Générer un pseudo basé sur le rôle
+    const pseudo = `${authData.role.charAt(0).toUpperCase() + authData.role.slice(1)}_${Math.floor(Math.random() * 1000)}`;
 
-  // Sauvegarder localement (session uniquement)
-  sessionStorage.setItem('chatUser', JSON.stringify(currentUser));
+    // 3️⃣ Stocker les informations utilisateur dans la base
+    await db.ref(`users/${userId}`).set({
+      username: pseudo,
+      role: authData.role,
+      label: authData.label,
+      code: code,
+      createdAt: Date.now(),
+      lastSeen: Date.now()
+    });
 
-  // Masquer écran auth, montrer chat
-  authScreen.classList.add('hidden');
-  chatScreen.classList.remove('hidden');
+    // 4️⃣ Mettre à jour l'utilisateur courant
+    currentUser = {
+      uid: userId,
+      role: authData.role,
+      label: authData.label,
+      username: pseudo
+    };
 
-  // Mettre à jour l'interface
-  updateUserInfo();
+    // 5️⃣ Sauvegarder localement (session uniquement)
+    sessionStorage.setItem('chatUser', JSON.stringify(currentUser));
 
-  // Redémarrer le timer d'inactivité
-  resetActivityTimer();
+    // 6️⃣ Basculer l'interface
+    authScreen.classList.add('hidden');
+    chatScreen.classList.remove('hidden');
+    updateUserInfo();
 
-  return true;
+    // 7️⃣ Démarrer le timer d'inactivité
+    resetActivityTimer();
+
+    return true;
+  } catch (error) {
+    console.error('Erreur d\'authentification:', error);
+    authError.textContent = 'Erreur de connexion: ' + error.message;
+    return false;
+  }
 }
 
 function logout() {
-  currentUser = null;
-  sessionStorage.removeItem('chatUser');
-  clearTimeout(authTimeout);
-  chatScreen.classList.add('hidden');
-  authScreen.classList.remove('hidden');
-  authCodeInput.value = '';
-  authError.textContent = '';
+  auth.signOut().then(() => {
+    currentUser = null;
+    sessionStorage.removeItem('chatUser');
+    clearTimeout(authTimeout);
+    chatScreen.classList.add('hidden');
+    authScreen.classList.remove('hidden');
+    authCodeInput.value = '';
+    authError.textContent = '';
+  }).catch(error => {
+    console.error('Erreur de déconnexion:', error);
+  });
 }
 
 function updateUserInfo() {
@@ -107,10 +133,15 @@ function resetActivityTimer() {
   authTimeout = setTimeout(() => {
     if (currentUser) {
       logout();
-      alert('Session expirée par inactivité');
+      alert('Session expirée par inactivité (30 minutes)');
     }
   }, 30 * 60 * 1000); // 30 minutes
 }
+
+// Mettre à jour le timer à chaque activité utilisateur
+['click', 'keypress', 'scroll', 'mousemove'].forEach(eventType => {
+  document.addEventListener(eventType, resetActivityTimer);
+});
 
 /* =====================================================
    CHAT - ENVOI DE MESSAGE
@@ -123,6 +154,7 @@ function sendMessage() {
     text: txt,
     username: currentUser.username,
     role: currentUser.role,
+    uid: currentUser.uid,
     timestamp: Date.now()
   };
 
@@ -130,6 +162,11 @@ function sendMessage() {
     .then(() => {
       chatInput.value = '';
       chatInput.focus();
+      
+      // Mettre à jour lastSeen
+      if (currentUser) {
+        db.ref(`users/${currentUser.uid}/lastSeen`).set(Date.now());
+      }
     })
     .catch(err => {
       console.error('Erreur d\'envoi:', err);
@@ -196,10 +233,7 @@ authBtn.addEventListener('click', () => {
     authError.textContent = 'Veuillez entrer un code';
     return;
   }
-  if (!authenticate(code)) {
-    authCodeInput.value = '';
-    authCodeInput.focus();
-  }
+  loginWithCode(code);
 });
 
 authCodeInput.addEventListener('keypress', (e) => {
@@ -213,28 +247,38 @@ chatInput.addEventListener('keypress', (e) => {
 
 logoutBtn.addEventListener('click', logout);
 
-// Timer d'inactivité
-setInterval(resetActivityTimer, 60000);
-
 /* =====================================================
    VÉRIFICATION AU CHARGEMENT
    ===================================================== */
 window.addEventListener('load', () => {
-  const savedUser = sessionStorage.getItem('chatUser');
-  if (savedUser) {
-    try {
-      currentUser = JSON.parse(savedUser);
-      // Vérifier que le code est toujours valide
-      if (AUTH_CODES[currentUser.code]) {
-        authScreen.classList.add('hidden');
-        chatScreen.classList.remove('hidden');
-        updateUserInfo();
-        resetActivityTimer();
+  // Vérifier si l'utilisateur est déjà connecté via Firebase Auth
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      // Utilisateur connecté, récupérer ses infos
+      try {
+        const snapshot = await db.ref(`users/${user.uid}`).once('value');
+        const userData = snapshot.val();
+        
+        if (userData) {
+          currentUser = {
+            uid: user.uid,
+            username: userData.username,
+            role: userData.role,
+            label: userData.label
+          };
+          
+          // Mettre à jour lastSeen
+          db.ref(`users/${user.uid}/lastSeen`).set(Date.now());
+          
+          // Mettre à jour l'interface
+          authScreen.classList.add('hidden');
+          chatScreen.classList.remove('hidden');
+          updateUserInfo();
+          resetActivityTimer();
+        }
+      } catch (error) {
+        console.error('Erreur de récupération des données:', error);
       }
-    } catch(e) {
-      console.error('Erreur de session:', e);
     }
-  }
+  });
 });
-
-
