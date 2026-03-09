@@ -53,49 +53,52 @@ const sendBtn = document.getElementById('sendBtn');
    AUTHENTIFICATION AVEC FIREBASE AUTH
    ===================================================== */
 async function loginWithCode(code) {
-  const authData = AUTH_CODES[code];
-  if (!authData) {
-    authError.textContent = 'Code invalide';
-    return false;
-  }
-
   try {
-    // 1️⃣ Se connecter anonymement à Firebase Auth
+    // 1️⃣ Récupérer les codes depuis Firebase
+    const codesSnapshot = await db.ref('auth_codes').once('value');
+    const codesData = codesSnapshot.val();
+    
+    // 2️⃣ Vérifier si le code existe
+    if (!codesData || !codesData[code]) {
+      authError.textContent = 'Code invalide';
+      return false;
+    }
+    
+    const authData = codesData[code];
+    
+    // 3️⃣ Se connecter anonymement à Firebase Auth
     const userCredential = await auth.signInAnonymously();
     const userId = userCredential.user.uid;
-
-    // 2️⃣ Générer un pseudo basé sur le rôle
+    
+    // 4️⃣ Générer un pseudo
     const pseudo = `${authData.role.charAt(0).toUpperCase() + authData.role.slice(1)}_${Math.floor(Math.random() * 1000)}`;
-
-    // 3️⃣ Stocker les informations utilisateur dans la base
+    
+    // 5️⃣ Stocker les infos utilisateur
     await db.ref(`users/${userId}`).set({
       username: pseudo,
       role: authData.role,
       label: authData.label,
-      code: code,
       createdAt: Date.now(),
       lastSeen: Date.now()
     });
-
-    // 4️⃣ Mettre à jour l'utilisateur courant
+    
+    // 6️⃣ Mettre à jour l'utilisateur courant
     currentUser = {
       uid: userId,
       role: authData.role,
       label: authData.label,
       username: pseudo
     };
-
-    // 5️⃣ Sauvegarder localement (session uniquement)
+    
+    // 7️⃣ Sauvegarder localement
     sessionStorage.setItem('chatUser', JSON.stringify(currentUser));
-
-    // 6️⃣ Basculer l'interface
+    
+    // 8️⃣ Basculer l'interface
     authScreen.classList.add('hidden');
     chatScreen.classList.remove('hidden');
     updateUserInfo();
-
-    // 7️⃣ Démarrer le timer d'inactivité
     resetActivityTimer();
-
+    
     return true;
   } catch (error) {
     console.error('Erreur d\'authentification:', error);
@@ -282,3 +285,4 @@ window.addEventListener('load', () => {
     }
   });
 });
+
