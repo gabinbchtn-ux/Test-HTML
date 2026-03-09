@@ -52,7 +52,7 @@ const sendBtn = document.getElementById('sendBtn');
 function authenticate(code) {
   const authData = AUTH_CODES[code];
   if (!authData) {
-    authError.textContent = 'Code invalide';
+    authError.textContent = 'Tu te trompe :)';
     return false;
   }
 
@@ -236,4 +236,5 @@ window.addEventListener('load', () => {
     }
   }
 });
+
 
