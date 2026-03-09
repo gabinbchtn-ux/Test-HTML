@@ -1,62 +1,38 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Chat test sur Firebase (compat)</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chat Terminal – Firebase</title>
 
-  <!-- 1️⃣ SDK Compat – ordre important -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <!-- ==== SDK Firebase (compat) ==== -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h1>Démo de chat Firebase</h1>
 
-  <button id="sendBtn">Envoyer « test »</button>
-  <ul id="messages"></ul>
+<!-- Conteneur principal du chat -->
+<section id="chatContainer">
+    <h1>Chat Terminal</h1>
 
-  <!-- 2️⃣ Votre code – placé **après** les SDK -->
-  <script>
-    // ------------------------------------------------------------------
-    // Remplacez les valeurs ci‑dessous par celles de votre projet Firebase
-    // ------------------------------------------------------------------
-    const firebaseConfig = {
-      apiKey: "AIzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
-      authDomain: "test-c59b4.firebaseapp.com",
-      databaseURL: "https://test-c59b4-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "test-c59b4",
-      storageBucket: "test-c59b4.firebasestorage.app",
-      messagingSenderId: "249535021863",
-      appId: "1:249535021863:web:43b75f582080b3ee82df02"
-    };
+    <!-- Choix du pseudo -->
+    <div class="input-group">
+        <label for="userPseudo">Pseudo :</label>
+        <input type="text" id="userPseudo" placeholder="Votre pseudo..." maxlength="20">
+    </div>
 
-    // Initialise le SDK Compat (expose la variable globale `firebase`)
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();          // Realtime Database
-    const messagesRef = db.ref('messages');  // Référence /messages
+    <!-- Zone d'affichage des messages -->
+    <div id="chatWindow"></div>
 
-    // ------------------------------------------------------------------
-    // Envoi du message « test » quand on clique sur le bouton
-    // ------------------------------------------------------------------
-    document.getElementById('sendBtn').addEventListener('click', () => {
-      const newMsg = {
-        text: "test",
-        timestamp: Date.now()
-      };
-      messagesRef.push(newMsg);   // ajoute le message dans la DB
-    });
+    <!-- Saisie du message -->
+    <div class="input-group">
+        <input type="text" id="chatInput" placeholder="Tapez votre message...">
+        <button id="sendBtn">ENVOYER</button>
+    </div>
+</section>
 
-    // ------------------------------------------------------------------
-    // Affichage en temps réel (facultatif)
-    // ------------------------------------------------------------------
-    messagesRef.on('value', snapshot => {
-      const list = document.getElementById('messages');
-      list.innerHTML = '';                // vide la liste
-      snapshot.forEach(child => {
-        const li = document.createElement('li');
-        li.textContent = child.val().text;
-        list.appendChild(li);
-      });
-    });
-  </script>
+<!-- Le script qui contient la logique du chat -->
+<script src="app.js"></script>
+
 </body>
 </html>
