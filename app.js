@@ -2,13 +2,13 @@
    Remplacez par vos propres valeurs depuis la console Firebase
    ===================================================== */
 const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://VOTRE_PROJECT_ID.firebaseio.com",
-  projectId: "VOTRE_PROJECT_ID",
-  storageBucket: "VOTRE_PROJECT_ID.appspot.com",
-  messagingSenderId: "VOTRE_SENDER_ID",
-  appId: "VOTRE_APP_ID"
+    apiKey: "AIzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
+    authDomain: "test-c59b4.firebaseapp.com",
+    databaseURL: "https://test-c59b4-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "test-c59b4",
+    storageBucket: "test-c59b4.firebasestorage.app",
+    messagingSenderId: "249535021863",
+    appId: "1:249535021863:web:43b75f582080b3ee82df02"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -20,9 +20,9 @@ const chatRef = db.ref('chat/messages');
    Modifiez ces codes selon vos besoins
    ===================================================== */
 const AUTH_CODES = {
-  'ADMIN123': { role: 'admin', label: '👑 Admin' },
-  'MOD456':   { role: 'moderator', label: '🛡️ Modérateur' },
-  'USER789':  { role: 'visitor', label: '👤 Visiteur' }
+  '3756': { role: 'admin', label: '👑 Admin' },
+  'MOD020':   { role: 'moderator', label: '🛡️ Modérateur' },
+  'USER843':  { role: 'visitor', label: '👤 Visiteur' }
 };
 
 /* =====================================================
@@ -236,3 +236,4 @@ window.addEventListener('load', () => {
     }
   }
 });
+
