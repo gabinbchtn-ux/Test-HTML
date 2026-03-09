@@ -1,0 +1,119 @@
+/* ==== Reset ==== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    line-height: 1.5;
+    background: var(--bg);
+    color: var(--txt);
+}
+header, footer {
+    padding: 1rem;
+    text-align: center;
+    background: var(--header-bg);
+    color: var(--header-txt);
+}
+main {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ==== Light / Dark ==== */
+:root {
+    --bg: #f5f5f5;
+    --txt: #222;
+    --card-bg: #fff;
+    --card-shadow: rgba(0,0,0,.1);
+    --header-bg: #0066ff;
+    --header-txt: #fff;
+}
+[data-theme="dark"] {
+    --bg: #1e1e1e;
+    --txt: #eee;
+    --card-bg: #2b2b2b;
+    --card-shadow: rgba(0,0,0,.5);
+    --header-bg: #0044aa;
+}
+
+/* ==== Card style ==== */
+.card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 6px var(--card-shadow);
+}
+.card h2 {
+    margin-top: 0;
+}
+
+/* ==== Chat ==== */
+.chat-window {
+    height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: .5rem;
+    margin-bottom: .5rem;
+    background: #fafafa;
+}
+.chat-msg {
+    margin: .3rem 0;
+}
+
+/* ==== Lists ==== */
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+li {
+    padding: .3rem .5rem;
+    border-bottom: 1px solid #ddd;
+}
+li:hover {
+    background: #eaeaea;
+}
+
+/* ==== Notes ==== */
+#noteArea {
+    min-height: 120px;
+    border: 1px solid #bbb;
+    padding: .5rem;
+    margin-bottom: .5rem;
+    background: #fff;
+}
+
+/* ==== Buttons ==== */
+button {
+    cursor: pointer;
+    background: #0066ff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: .4rem .8rem;
+}
+button:hover {
+    background: #0055dd;
+}
+
+/* ==== Footer ==== */
+footer {
+    font-size: .85rem;
+}
+
+/* ==== Responsiveness ==== */
+@media (min-width: 800px) {
+    main { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1200px) {
+    main { grid-template-columns: repeat(3, 1fr); }
+}
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
