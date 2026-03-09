@@ -1,294 +1,253 @@
 /* =====================================================
-   CONFIGURATION FIREBASE
-   Remplacez par vos propres valeurs depuis la console Firebase
+   RESET & BASE
    ===================================================== */
-const firebaseConfig = {
-    apiKey: "AIzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
-    authDomain: "test-c59b4.firebaseapp.com",
-    databaseURL: "https://test-c59b4-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "test-c59b4",
-    storageBucket: "test-c59b4.firebasestorage.app",
-    messagingSenderId: "249535021863",
-    appId: "1:249535021863:web:43b75f582080b3ee82df02"
-};
-
-// Initialiser Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const auth = firebase.auth();
-const chatRef = db.ref('chat/messages');
-
-/* =====================================================
-   CODES D'AUTHENTIFICATION & RÔLES
-   Modifiez ces codes selon vos besoins
-   ===================================================== */
-const AUTH_CODES = {
-  '123': { role: 'admin', label: '👑 Admin' },
-  '456':   { role: 'moderator', label: '🛡️ Modérateur' },
-  '789':  { role: 'visitor', label: '👤 Visiteur' }
-};
-
-/* =====================================================
-   VARIABLES GLOBALES
-   ===================================================== */
-let currentUser = null;
-let authTimeout = null;
-
-/* =====================================================
-   ÉLÉMENTS DOM
-   ===================================================== */
-const authScreen = document.getElementById('authScreen');
-const chatScreen = document.getElementById('chatScreen');
-const authCodeInput = document.getElementById('authCode');
-const authBtn = document.getElementById('authBtn');
-const authError = document.getElementById('authError');
-const userNameDisplay = document.getElementById('userNameDisplay');
-const userRoleBadge = document.getElementById('userRoleBadge');
-const logoutBtn = document.getElementById('logoutBtn');
-const chatWindow = document.getElementById('chatWindow');
-const chatInput = document.getElementById('chatInput');
-const sendBtn = document.getElementById('sendBtn');
-
-/* =====================================================
-   AUTHENTIFICATION AVEC FIREBASE AUTH
-   ===================================================== */
-async function loginWithCode(code) {
-  try {
-    // 1️⃣ Récupérer les codes depuis Firebase
-    const codesSnapshot = await db.ref('auth_codes').once('value');
-    const codesData = codesSnapshot.val();
-    
-    if (!codesData || !codesData[code]) {
-      authError.textContent = 'Code invalide';
-      return false;
-    }
-    
-    const authData = codesData[code];
-    
-    // 2️⃣ Continuer avec Firebase Auth...
-    const userCredential = await auth.signInAnonymously();
-    const userId = userCredential.user.uid;
-    
-    // 3️⃣ Stocker les infos utilisateur
-    await db.ref(`users/${userId}`).set({
-      username: `${authData.role.charAt(0).toUpperCase() + authData.role.slice(1)}_${Math.floor(Math.random() * 1000)}`,
-      role: authData.role,
-      label: authData.label,
-      createdAt: Date.now()
-    });
-    
-    // ... suite du code
-  } catch (error) {
-    console.error('Erreur:', error);
-    authError.textContent = 'Erreur de connexion';
-    return false;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  background: #f5f5f5;
+  color: #222;
 }
 
-    // 4️⃣ Mettre à jour l'utilisateur courant
-    currentUser = {
-      uid: userId,
-      role: authData.role,
-      label: authData.label,
-      username: pseudo
-    };
+.hidden { display: none !important; }
 
-    // 5️⃣ Sauvegarder localement (session uniquement)
-    sessionStorage.setItem('chatUser', JSON.stringify(currentUser));
-
-    // 6️⃣ Basculer l'interface
-    authScreen.classList.add('hidden');
-    chatScreen.classList.remove('hidden');
-    updateUserInfo();
-
-    // 7️⃣ Démarrer le timer d'inactivité
-    resetActivityTimer();
-
-    return true;
-  } catch (error) {
-    console.error('Erreur d\'authentification:', error);
-    authError.textContent = 'Erreur de connexion: ' + error.message;
-    return false;
-  }
-}
-
-function logout() {
-  auth.signOut().then(() => {
-    currentUser = null;
-    sessionStorage.removeItem('chatUser');
-    clearTimeout(authTimeout);
-    chatScreen.classList.add('hidden');
-    authScreen.classList.remove('hidden');
-    authCodeInput.value = '';
-    authError.textContent = '';
-  }).catch(error => {
-    console.error('Erreur de déconnexion:', error);
-  });
-}
-
-function updateUserInfo() {
-  if (!currentUser) return;
-  userNameDisplay.textContent = currentUser.username;
-  userRoleBadge.textContent = currentUser.label;
-  userRoleBadge.className = `role-badge ${currentUser.role}`;
+/* =====================================================
+   SCREENS
+   ===================================================== */
+.screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* =====================================================
-   TIMER D'INACTIVITÉ (déconnexion automatique)
+   AUTH SCREEN
    ===================================================== */
-function resetActivityTimer() {
-  clearTimeout(authTimeout);
-  authTimeout = setTimeout(() => {
-    if (currentUser) {
-      logout();
-      alert('Session expirée par inactivité (30 minutes)');
-    }
-  }, 30 * 60 * 1000); // 30 minutes
+#authScreen {
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0066ff, #0044aa);
 }
 
-// Mettre à jour le timer à chaque activité utilisateur
-['click', 'keypress', 'scroll', 'mousemove'].forEach(eventType => {
-  document.addEventListener(eventType, resetActivityTimer);
-});
-
-/* =====================================================
-   CHAT - ENVOI DE MESSAGE
-   ===================================================== */
-function sendMessage() {
-  const txt = chatInput.value.trim();
-  if (!txt || !currentUser) return;
-
-  const newMsg = {
-    text: txt,
-    username: currentUser.username,
-    role: currentUser.role,
-    uid: currentUser.uid,
-    timestamp: Date.now()
-  };
-
-  chatRef.push(newMsg)
-    .then(() => {
-      chatInput.value = '';
-      chatInput.focus();
-      
-      // Mettre à jour lastSeen
-      if (currentUser) {
-        db.ref(`users/${currentUser.uid}/lastSeen`).set(Date.now());
-      }
-    })
-    .catch(err => {
-      console.error('Erreur d\'envoi:', err);
-      alert('Erreur lors de l\'envoi du message');
-    });
+.auth-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
 }
 
-/* =====================================================
-   CHAT - AFFICHAGE EN TEMPS RÉEL
-   ===================================================== */
-chatRef.on('value', snap => {
-  const raw = snap.val();
-  const msgs = raw ? Object.values(raw) : [];
+.auth-card h1 { margin-bottom: 0.5rem; }
+.auth-card p { color: #666; margin-bottom: 1.5rem; }
 
-  chatWindow.innerHTML = '';
-
-  msgs.forEach(m => {
-    const div = document.createElement('div');
-    div.className = `chat-msg ${m.role}`;
-
-    // Formatage de l'heure
-    const time = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-    // Message HTML avec pseudo, rôle et texte
-    div.innerHTML = `
-      <div class="msg-header">
-        <span class="msg-user">${escapeHtml(m.username)}</span>
-        <span class="msg-role">${getRoleLabel(m.role)}</span>
-        <span class="msg-time">${time}</span>
-      </div>
-      <div class="msg-text">${escapeHtml(m.text)}</div>
-    `;
-
-    chatWindow.appendChild(div);
-  });
-
-  // Scroll automatique vers le bas
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-});
-
-/* =====================================================
-   UTILITAIRES
-   ===================================================== */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+.auth-card input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 1rem;
 }
 
-function getRoleLabel(role) {
-  switch(role) {
-    case 'admin': return '👑 Admin';
-    case 'moderator': return '🛡️ Modérateur';
-    default: return '👤 Visiteur';
-  }
+.auth-card input:focus {
+  outline: none;
+  border-color: #0066ff;
+}
+
+.auth-card button {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  background: #0066ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.auth-card button:hover { background: #0055dd; }
+
+.error {
+  color: #d32f2f;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
 }
 
 /* =====================================================
-   ÉVÉNEMENTS
+   CHAT SCREEN
    ===================================================== */
-authBtn.addEventListener('click', () => {
-  const code = authCodeInput.value.trim();
-  if (!code) {
-    authError.textContent = 'Veuillez entrer un code';
-    return;
-  }
-  loginWithCode(code);
-});
+header {
+  background: #0066ff;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
 
-authCodeInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') authBtn.click();
-});
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 
-sendBtn.addEventListener('click', sendMessage);
-chatInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendMessage();
-});
+#userNameDisplay {
+  font-weight: bold;
+}
 
-logoutBtn.addEventListener('click', logout);
+.role-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.role-badge.admin { background: #d32f2f; color: white; }
+.role-badge.moderator { background: #f57c00; color: white; }
+.role-badge.visitor { background: #757575; color: white; }
+
+#logoutBtn {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#logoutBtn:hover { background: rgba(255,255,255,0.3); }
+
+main {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.chat-section {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 180px);
+}
+
+.chat-window {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fafafa;
+}
+
+.chat-input-area {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chat-input-area input {
+  flex: 1;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+}
+
+.chat-input-area input:focus {
+  outline: none;
+  border-color: #0066ff;
+}
+
+.chat-input-area button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background: #0066ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chat-input-area button:hover { background: #0055dd; }
 
 /* =====================================================
-   VÉRIFICATION AU CHARGEMENT
+   MESSAGES
    ===================================================== */
-window.addEventListener('load', () => {
-  // Vérifier si l'utilisateur est déjà connecté via Firebase Auth
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      // Utilisateur connecté, récupérer ses infos
-      try {
-        const snapshot = await db.ref(`users/${user.uid}`).once('value');
-        const userData = snapshot.val();
-        
-        if (userData) {
-          currentUser = {
-            uid: user.uid,
-            username: userData.username,
-            role: userData.role,
-            label: userData.label
-          };
-          
-          // Mettre à jour lastSeen
-          db.ref(`users/${user.uid}/lastSeen`).set(Date.now());
-          
-          // Mettre à jour l'interface
-          authScreen.classList.add('hidden');
-          chatScreen.classList.remove('hidden');
-          updateUserInfo();
-          resetActivityTimer();
-        }
-      } catch (error) {
-        console.error('Erreur de récupération des données:', error);
-      }
-    }
-  });
-});
+.chat-msg {
+  margin-bottom: 0.8rem;
+  padding: 0.8rem;
+  border-radius: 8px;
+  background: white;
+  border-left: 4px solid #ddd;
+}
 
+.chat-msg.admin {
+  background: #ffebee;
+  border-left-color: #d32f2f;
+}
 
+.chat-msg.moderator {
+  background: #fff3e0;
+  border-left-color: #f57c00;
+}
+
+.chat-msg.visitor {
+  background: #f5f5f5;
+  border-left-color: #757575;
+}
+
+.msg-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.msg-user {
+  font-weight: bold;
+}
+
+.msg-role {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.msg-time {
+  margin-left: auto;
+  opacity: 0.6;
+  font-size: 0.75rem;
+}
+
+.msg-text {
+  word-wrap: break-word;
+}
+
+/* =====================================================
+   FOOTER
+   ===================================================== */
+footer {
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  color: #666;
+  background: #eee;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+@media (max-width: 600px) {
+  .chat-section { height: calc(100vh - 140px); }
+  .chat-window { height: auto; min-height: 300px; }
+  .user-info { font-size: 0.9rem; }
+  #logoutBtn { padding: 0.3rem 0.6rem; }
+}
