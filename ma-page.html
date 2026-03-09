@@ -3,36 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Chat Terminal – Firebase</title>
+    <title>Chat Sécurisé</title>
+    <link rel="stylesheet" href="style.css">
 
-    <!-- ==== SDK Firebase (compat) ==== -->
+    <!-- SDK Firebase (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 
-<!-- Conteneur principal du chat -->
-<section id="chatContainer">
-    <h1>Chat Terminal</h1>
-
-    <!-- Choix du pseudo -->
-    <div class="input-group">
-        <label for="userPseudo">Pseudo :</label>
-        <input type="text" id="userPseudo" placeholder="Votre pseudo..." maxlength="20">
+    <!-- Écran d'authentification -->
+    <div id="authScreen" class="screen">
+        <div class="auth-card">
+            <h1>🔐 Accès au Chat</h1>
+            <p>Entrez votre code d'accès</p>
+            <input type="password" id="authCode" placeholder="Code secret">
+            <button id="authBtn">Se connecter</button>
+            <p id="authError" class="error"></p>
+        </div>
     </div>
 
-    <!-- Zone d'affichage des messages -->
-    <div id="chatWindow"></div>
+    <!-- Écran du Chat -->
+    <div id="chatScreen" class="screen hidden">
+        <header>
+            <h1>💬 Chat Privé</h1>
+            <div class="user-info">
+                <span id="userNameDisplay"></span>
+                <span id="userRoleBadge"></span>
+                <button id="logoutBtn">Déconnexion</button>
+            </div>
+        </header>
 
-    <!-- Saisie du message -->
-    <div class="input-group">
-        <input type="text" id="chatInput" placeholder="Tapez votre message...">
-        <button id="sendBtn">ENVOYER</button>
+        <main>
+            <section class="card chat-section">
+                <div class="chat-window" id="chatWindow"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Écrire un message…">
+                    <button id="sendBtn">Envoyer</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <small>Authentification par code • Données stockées sur Firebase</small>
+        </footer>
     </div>
-</section>
 
-<!-- Le script qui contient la logique du chat -->
-<script src="app.js"></script>
-
+    <script src="app.js"></script>
 </body>
 </html>
