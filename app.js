@@ -20,7 +20,7 @@ const chatRef = db.ref('chat/messages');
    Modifiez ces codes selon vos besoins
    ===================================================== */
 const AUTH_CODES = {
-  '3756': { role: 'admin', label: '👑 Admin' },
+  '89735786637893486': { role: 'admin', label: '👑 Admin' },
   'MOD020':   { role: 'moderator', label: '🛡️ Modérateur' },
   'USER843':  { role: 'visitor', label: '👤 Visiteur' }
 };
