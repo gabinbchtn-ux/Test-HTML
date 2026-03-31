@@ -22,7 +22,8 @@ const chatRef = db.ref('chat/messages');
 const AUTH_CODES = {
   '89735786637893486': { role: 'admin', label: '👑 Admin' },
   'MOD020':   { role: 'moderator', label: '🛡️ Modérateur' },
-  'USER843':  { role: 'visitor', label: '👤 Visiteur' }
+  'USER843':  { role: 'visitor', label: '👤 Visiteur' },
+  '0000':  { role: 'task', label: 'Testeur' }
 };
 
 /* =====================================================
