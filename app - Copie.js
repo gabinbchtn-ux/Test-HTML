@@ -1,11 +1,12 @@
 // ==================== CONFIGURATION ====================
 const firebaseConfig = {
-    apiKey: "VOTRE_API_KEY",
-    authDomain: "votre-projet.firebaseapp.com",
-    projectId: "votre-project-id",
-    storageBucket: "votre-projet.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef123456"
+    apiKey: "AIzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
+  authDomain: "test-c59b4.firebaseapp.com",
+  databaseURL: "https://test-c59b4-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "test-c59b4",
+  storageBucket: "test-c59b4.firebasestorage.app",
+  messagingSenderId: "249535021863",
+  appId: "1:249535021863:web:43b75f582080b3ee82df02"
 };
 
 // ==================== VARIABLES ====================
