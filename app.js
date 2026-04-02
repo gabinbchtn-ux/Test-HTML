@@ -1,293 +1,239 @@
-/* -------------------------------------------------
-   Petite couche d’accès simplifiée à localStorage
-------------------------------------------------- */
-const LS = {
-    get(key, fallback) {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    },
-    set(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
-    }
+/*   CONFIGURATION FIREBASE
+   Remplacez par vos propres valeurs depuis la console Firebase
+   ===================================================== */
+const firebaseConfig = {
+    apiKey: "AIzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
+    authDomain: "test-c59b4.firebaseapp.com",
+    databaseURL: "https://test-c59b4-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "test-c59b4",
+    storageBucket: "test-c59b4.firebasestorage.app",
+    messagingSenderId: "249535021863",
+    appId: "1:249535021863:web:43b75f582080b3ee82df02"
 };
 
-/* -------------------------------------------------
-   Tout le code s’exécute après le DOM chargé
-------------------------------------------------- */
-document.addEventListener('DOMContentLoaded', () => {
-   
-   /* ---------- 1️⃣ Chat synchronisé avec Firebase ---------- */
-document.addEventListener('DOMContentLoaded', () => {
-    const chatWindow = document.getElementById('chatWindow');
-    const chatInput  = document.getElementById('chatInput');
-    const sendBtn    = document.getElementById('sendBtn');
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const chatRef = db.ref('chat/messages');
 
-    // Référence à la branche "chat" de la base
-    const chatRef = db.ref('chat');   // <-- `db` vient du script du <head>
+/* =====================================================
+   CODES D'AUTHENTIFICATION & RÔLES
+   Modifiez ces codes selon vos besoins
+   ===================================================== */
+const AUTH_CODES = {
+  '89735786637893486': { role: 'admin', label: '👑 Admin' },
+  'MOD020':   { role: 'moderator', label: '🛡️ Modérateur' },
+  'USER843':  { role: 'visitor', label: '👤 Visiteur' },
+  '0000':  { role: 'task', label: 'Testeur' }
+};
 
-    // ----- Écoute en temps réel -----
-    chatRef.on('value', snapshot => {
-        const msgs = snapshot.val() || [];
-        chatWindow.innerHTML = '';
-        msgs.forEach(m => {
-            const div = document.createElement('div');
-            div.className = 'chat-msg';
-            div.textContent = m;
-            chatWindow.appendChild(div);
-        });
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-    });
+/* =====================================================
+   VARIABLES GLOBALES
+   ===================================================== */
+let currentUser = null;
+let authTimeout = null;
 
-    // ----- Envoi d’un nouveau message -----
-    sendBtn.addEventListener('click', () => {
-        const txt = chatInput.value.trim();
-        if (!txt) return;
+/* =====================================================
+   ÉLÉMENTS DOM
+   ===================================================== */
+const authScreen = document.getElementById('authScreen');
+const chatScreen = document.getElementById('chatScreen');
+const authCodeInput = document.getElementById('authCode');
+const authBtn = document.getElementById('authBtn');
+const authError = document.getElementById('authError');
+const userNameDisplay = document.getElementById('userNameDisplay');
+const userRoleBadge = document.getElementById('userRoleBadge');
+const logoutBtn = document.getElementById('logoutBtn');
+const chatWindow = document.getElementById('chatWindow');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
 
-        // On récupère la liste actuelle, on y ajoute le nouveau texte, puis on la ré‑écrit
-        chatRef.once('value')
-            .then(snap => {
-                const msgs = snap.val() || [];
-                msgs.push(txt);
-                return chatRef.set(msgs);
-            })
-            .then(() => {
-                chatInput.value = '';
-            })
-            .catch(err => console.error('Erreur Firebase :', err));
-    });
+/* =====================================================
+   AUTHENTIFICATION
+   ===================================================== */
+function authenticate(code) {
+  const authData = AUTH_CODES[code];
+  if (!authData) {
+    authError.textContent = 'Tu te trompe :)';
+    return false;
+  }
 
-    /* -----------------------------------------------------------------
-       Le reste de votre script (todo‑list, notes, calendrier, etc.)
-       peut rester exactement comme avant – il utilise toujours localStorage.
-       ----------------------------------------------------------------- */
+  // Générer un pseudo basé sur le rôle et un nombre aléatoire
+  const pseudo = `${authData.role.charAt(0).toUpperCase() + authData.role.slice(1)}_${Math.floor(Math.random() * 1000)}`;
 
-    /* ------------------- TODO LIST (exemple) ----------------------- */
-    const newTask   = document.getElementById('newTask');
-    const addTaskBtn = document.getElementById('addTaskBtn');
-    const taskList   = document.getElementById('taskList');
+  currentUser = {
+    code: code,
+    role: authData.role,
+    label: authData.label,
+    username: pseudo
+  };
 
-    function renderTasks() {
-        const tasks = LS.get('tasks', []);
-        taskList.innerHTML = '';
-        tasks.forEach((t, i) => {
-            const li = document.createElement('li');
-            li.textContent = t;
-            li.addEventListener('click', () => {
-                const arr = LS.get('tasks', []);
-                arr.splice(i, 1);
-                LS.set('tasks', arr);
-                renderTasks();
-            });
-            taskList.appendChild(li);
-        });
+  // Sauvegarder localement (session uniquement)
+  sessionStorage.setItem('chatUser', JSON.stringify(currentUser));
+
+  // Masquer écran auth, montrer chat
+  authScreen.classList.add('hidden');
+  chatScreen.classList.remove('hidden');
+
+  // Mettre à jour l'interface
+  updateUserInfo();
+
+  // Redémarrer le timer d'inactivité
+  resetActivityTimer();
+
+  return true;
+}
+
+function logout() {
+  currentUser = null;
+  sessionStorage.removeItem('chatUser');
+  clearTimeout(authTimeout);
+  chatScreen.classList.add('hidden');
+  authScreen.classList.remove('hidden');
+  authCodeInput.value = '';
+  authError.textContent = '';
+}
+
+function updateUserInfo() {
+  if (!currentUser) return;
+  userNameDisplay.textContent = currentUser.username;
+  userRoleBadge.textContent = currentUser.label;
+  userRoleBadge.className = `role-badge ${currentUser.role}`;
+}
+
+/* =====================================================
+   TIMER D'INACTIVITÉ (déconnexion automatique)
+   ===================================================== */
+function resetActivityTimer() {
+  clearTimeout(authTimeout);
+  authTimeout = setTimeout(() => {
+    if (currentUser) {
+      logout();
+      alert('Session expirée par inactivité');
     }
+  }, 30 * 60 * 1000); // 30 minutes
+}
 
-    addTaskBtn.addEventListener('click', () => {
-        const txt = newTask.value.trim();
-        if (!txt) return;
-        const arr = LS.get('tasks', []);
-        arr.push(txt);
-        LS.set('tasks', arr);
-        newTask.value = '';
-        renderTasks();
+/* =====================================================
+   CHAT - ENVOI DE MESSAGE
+   ===================================================== */
+function sendMessage() {
+  const txt = chatInput.value.trim();
+  if (!txt || !currentUser) return;
+
+  const newMsg = {
+    text: txt,
+    username: currentUser.username,
+    role: currentUser.role,
+    timestamp: Date.now()
+  };
+
+  chatRef.push(newMsg)
+    .then(() => {
+      chatInput.value = '';
+      chatInput.focus();
+    })
+    .catch(err => {
+      console.error('Erreur d\'envoi:', err);
+      alert('Erreur lors de l\'envoi du message');
     });
+}
 
-    renderTasks();
+/* =====================================================
+   CHAT - AFFICHAGE EN TEMPS RÉEL
+   ===================================================== */
+chatRef.on('value', snap => {
+  const raw = snap.val();
+  const msgs = raw ? Object.values(raw) : [];
 
-    /* --------------------------------------------------------------- */
-    /* (Toutes les autres sections – notes, calendrier, compteur, …) */
-    /* restent inchangées – vous n’avez rien à modifier ici.          */
+  chatWindow.innerHTML = '';
+
+  msgs.forEach(m => {
+    const div = document.createElement('div');
+    div.className = `chat-msg ${m.role}`;
+
+    // Formatage de l'heure
+    const time = new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    // Message HTML avec pseudo, rôle et texte
+    div.innerHTML = `
+      <div class="msg-header">
+        <span class="msg-user">${escapeHtml(m.username)}</span>
+        <span class="msg-role">${getRoleLabel(m.role)}</span>
+        <span class="msg-time">${time}</span>
+      </div>
+      <div class="msg-text">${escapeHtml(m.text)}</div>
+    `;
+
+    chatWindow.appendChild(div);
+  });
+
+  // Scroll automatique vers le bas
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 });
 
-    /* ---------- 2️⃣ Todo‑list ---------- */
-    const newTask   = document.getElementById('newTask');
-    const addTaskBtn = document.getElementById('addTaskBtn');
-    const taskList   = document.getElementById('taskList');
+/* =====================================================
+   UTILITAIRES
+   ===================================================== */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
 
-    function renderTasks() {
-        const tasks = LS.get('tasks', []);
-        taskList.innerHTML = '';
-        tasks.forEach((t, i) => {
-            const li = document.createElement('li');
-            li.textContent = t;
-            li.addEventListener('click', () => {
-                const arr = LS.get('tasks', []);
-                arr.splice(i, 1);
-                LS.set('tasks', arr);
-                renderTasks();
-            });
-            taskList.appendChild(li);
-        });
+function getRoleLabel(role) {
+  switch(role) {
+    case 'admin': return '👑 Admin';
+    case 'moderator': return '🛡️ Modérateur';
+    default: return '👤 Visiteur';
+  }
+}
+
+/* =====================================================
+   ÉVÉNEMENTS
+   ===================================================== */
+authBtn.addEventListener('click', () => {
+  const code = authCodeInput.value.trim();
+  if (!code) {
+    authError.textContent = 'Veuillez entrer un code';
+    return;
+  }
+  if (!authenticate(code)) {
+    authCodeInput.value = '';
+    authCodeInput.focus();
+  }
+});
+
+authCodeInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') authBtn.click();
+});
+
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+logoutBtn.addEventListener('click', logout);
+
+// Timer d'inactivité
+setInterval(resetActivityTimer, 60000);
+
+/* =====================================================
+   VÉRIFICATION AU CHARGEMENT
+   ===================================================== */
+window.addEventListener('load', () => {
+  const savedUser = sessionStorage.getItem('chatUser');
+  if (savedUser) {
+    try {
+      currentUser = JSON.parse(savedUser);
+      // Vérifier que le code est toujours valide
+      if (AUTH_CODES[currentUser.code]) {
+        authScreen.classList.add('hidden');
+        chatScreen.classList.remove('hidden');
+        updateUserInfo();
+        resetActivityTimer();
+      }
+    } catch(e) {
+      console.error('Erreur de session:', e);
     }
-
-    addTaskBtn.addEventListener('click', () => {
-        const txt = newTask.value.trim();
-        if (!txt) return;
-        const arr = LS.get('tasks', []);
-        arr.push(txt);
-        LS.set('tasks', arr);
-        newTask.value = '';
-        renderTasks();
-    });
-
-    renderTasks();
-
-    /* ---------- 3️⃣ Bloc‑notes ---------- */
-    const noteArea   = document.getElementById('noteArea');
-    const saveNoteBtn = document.getElementById('saveNoteBtn');
-
-    noteArea.innerHTML = LS.get('note', '');
-
-    saveNoteBtn.addEventListener('click', () => {
-        LS.set('note', noteArea.innerHTML);
-        alert('Note enregistrée');
-    });
-
-    /* ---------- 4️⃣ Calendrier simple ---------- */
-    const eventDate   = document.getElementById('eventDate');
-    const eventDesc   = document.getElementById('eventDesc');
-    const addEventBtn = document.getElementById('addEventBtn');
-    const eventList   = document.getElementById('eventList');
-
-    function renderEvents() {
-        const evts = LS.get('events', []);
-        eventList.innerHTML = '';
-        evts.forEach((e, i) => {
-            const li = document.createElement('li');
-            li.textContent = `${e.date} – ${e.desc}`;
-            li.addEventListener('click', () => {
-                const arr = LS.get('events', []);
-                arr.splice(i, 1);
-                LS.set('events', arr);
-                renderEvents();
-            });
-            eventList.appendChild(li);
-        });
-    }
-
-    addEventBtn.addEventListener('click', () => {
-        if (!eventDate.value || !eventDesc.value.trim()) return;
-        const evts = LS.get('events', []);
-        evts.push({date: eventDate.value, desc: eventDesc.value.trim()});
-        LS.set('events', evts);
-        eventDate.value = '';
-        eventDesc.value = '';
-        renderEvents();
-    });
-
-    renderEvents();
-
-    /* ---------- 7️⃣ Compteur de jours ---------- */
-    const targetDate = document.getElementById('targetDate');
-    const calcBtn    = document.getElementById('calcBtn');
-    const resultP    = document.getElementById('result');
-
-    calcBtn.addEventListener('click', () => {
-        if (!targetDate.value) return;
-        const today  = new Date();
-        const target = new Date(targetDate.value);
-        const diffMs = target - today;
-        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-        if (diffDays > 0) {
-            resultP.textContent = `Il reste ${diffDays} jour(s)`;
-        } else if (diffDays < 0) {
-            resultP.textContent = `${Math.abs(diffDays)} jour(s) déjà écoulé(s)`;
-        } else {
-            resultP.textContent = "C’est aujourd’hui !";
-        }
-    });
-
-    /* ---------- 11️⃣ Recherche interne ---------- */
-    const searchBox = document.getElementById('searchBox');
-    const searchRes = document.getElementById('searchResults');
-
-    function performSearch(query) {
-        const q = query.toLowerCase();
-        const hits = [];
-
-        // notes
-        const note = LS.get('note', '');
-        if (note && note.toLowerCase().includes(q)) {
-            hits.push({type: 'Note', snippet: note.substring(0, 30) + '…'});
-        }
-
-        // tasks
-        LS.get('tasks', []).forEach(t => {
-            if (t.toLowerCase().includes(q)) hits.push({type: 'Todo', snippet: t});
-        });
-
-        // events
-        LS.get('events', []).forEach(e => {
-            if (e.desc.toLowerCase().includes(q) || e.date.includes(q)) {
-                hits.push({type: 'Événement', snippet: `${e.date} – ${e.desc}`});
-            }
-        });
-
-        // render
-        searchRes.innerHTML = '';
-        if (hits.length === 0) {
-            searchRes.innerHTML = '<li>Aucun résultat</li>';
-            return;
-        }
-        hits.forEach(h => {
-            const li = document.createElement('li');
-            li.textContent = `[${h.type}] ${h.snippet}`;
-            searchRes.appendChild(li);
-        });
-    }
-
-    searchBox.addEventListener('input', e => performSearch(e.target.value));
-
-    /* ---------- 12️⃣ Mode sombre / clair ---------- */
-    const themeToggle = document.getElementById('themeToggle');
-
-    function applyTheme(isDark) {
-        document.documentElement.dataset.theme = isDark ? 'dark' : '';
-        localStorage.setItem('darkMode', isDark);
-    }
-
-    themeToggle.addEventListener('click', () => {
-        const currentlyDark = document.documentElement.dataset.theme === 'dark';
-        applyTheme(!currentlyDark);
-    });
-
-    // init from storage
-    applyTheme(localStorage.getItem('darkMode') === 'true');
-
-    /* ---------- 15️⃣ À faire ce week‑end ---------- */
-    const showWeekendBtn = document.getElementById('showWeekendBtn');
-    const weekendList    = document.getElementById('weekendList');
-
-    showWeekendBtn.addEventListener('click', () => {
-        const tasks = LS.get('tasks', []);
-        const filtered = tasks.filter(t =>
-            /week[-\s]?end|samedi|dimanche/i.test(t)
-        );
-        weekendList.innerHTML = '';
-        if (filtered.length === 0) {
-            weekendList.innerHTML = '<li>Aucune tâche prévue pour le week‑end</li>';
-            return;
-        }
-        filtered.forEach(t => {
-            const li = document.createElement('li');
-            li.textContent = t;
-            weekendList.appendChild(li);
-        });
-    });
-
-    /* ---------- 17️⃣ Statistiques d’usage ---------- */
-    const visitSpan = document.getElementById('visitCount');
-    let visits = Number(localStorage.getItem('visits') || 0);
-    visits += 1;
-    localStorage.setItem('visits', visits);
-    visitSpan.textContent = visits;
-
-}); // ← fin DOMContentLoaded
-visits += 1;
-localStorage.setItem('visits', visits);
-visitSpan.textContent = visits;
-
-
-
-
+  }
+});
