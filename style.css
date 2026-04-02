@@ -1,253 +1,119 @@
-/* =====================================================
-   RESET & BASE
-   ===================================================== */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ==== Reset ==== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 body {
-  font-family: system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
-  background: #f5f5f5;
-  color: #222;
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    line-height: 1.5;
+    background: var(--bg);
+    color: var(--txt);
 }
-
-.hidden { display: none !important; }
-
-/* =====================================================
-   SCREENS
-   ===================================================== */
-.screen {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+header, footer {
+    padding: 1rem;
+    text-align: center;
+    background: var(--header-bg);
+    color: var(--header-txt);
 }
-
-/* =====================================================
-   AUTH SCREEN
-   ===================================================== */
-#authScreen {
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #0066ff, #0044aa);
-}
-
-.auth-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-  width: 90%;
-  max-width: 400px;
-  text-align: center;
-}
-
-.auth-card h1 { margin-bottom: 0.5rem; }
-.auth-card p { color: #666; margin-bottom: 1.5rem; }
-
-.auth-card input {
-  width: 100%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 2px solid #ddd;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-}
-
-.auth-card input:focus {
-  outline: none;
-  border-color: #0066ff;
-}
-
-.auth-card button {
-  width: 100%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  background: #0066ff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.auth-card button:hover { background: #0055dd; }
-
-.error {
-  color: #d32f2f;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-}
-
-/* =====================================================
-   CHAT SCREEN
-   ===================================================== */
-header {
-  background: #0066ff;
-  color: white;
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-#userNameDisplay {
-  font-weight: bold;
-}
-
-.role-badge {
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-.role-badge.admin { background: #d32f2f; color: white; }
-.role-badge.moderator { background: #f57c00; color: white; }
-.role-badge.visitor { background: #757575; color: white; }
-
-#logoutBtn {
-  background: rgba(255,255,255,0.2);
-  color: white;
-  border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-#logoutBtn:hover { background: rgba(255,255,255,0.3); }
-
 main {
-  flex: 1;
-  padding: 1rem;
-  display: flex;
-  justify-content: center;
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.chat-section {
-  width: 100%;
-  max-width: 800px;
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 180px);
+/* ==== Light / Dark ==== */
+:root {
+    --bg: #f5f5f5;
+    --txt: #222;
+    --card-bg: #fff;
+    --card-shadow: rgba(0,0,0,.1);
+    --header-bg: #0066ff;
+    --header-txt: #fff;
+}
+[data-theme="dark"] {
+    --bg: #1e1e1e;
+    --txt: #eee;
+    --card-bg: #2b2b2b;
+    --card-shadow: rgba(0,0,0,.5);
+    --header-bg: #0044aa;
 }
 
+/* ==== Card style ==== */
+.card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 6px var(--card-shadow);
+}
+.card h2 {
+    margin-top: 0;
+}
+
+/* ==== Chat ==== */
 .chat-window {
-  flex: 1;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  background: #fafafa;
+    height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: .5rem;
+    margin-bottom: .5rem;
+    background: #fafafa;
 }
-
-.chat-input-area {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.chat-input-area input {
-  flex: 1;
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 2px solid #ddd;
-  border-radius: 6px;
-}
-
-.chat-input-area input:focus {
-  outline: none;
-  border-color: #0066ff;
-}
-
-.chat-input-area button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  background: #0066ff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.chat-input-area button:hover { background: #0055dd; }
-
-/* =====================================================
-   MESSAGES
-   ===================================================== */
 .chat-msg {
-  margin-bottom: 0.8rem;
-  padding: 0.8rem;
-  border-radius: 8px;
-  background: white;
-  border-left: 4px solid #ddd;
+    margin: .3rem 0;
 }
 
-.chat-msg.admin {
-  background: #ffebee;
-  border-left-color: #d32f2f;
+/* ==== Lists ==== */
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+li {
+    padding: .3rem .5rem;
+    border-bottom: 1px solid #ddd;
+}
+li:hover {
+    background: #eaeaea;
 }
 
-.chat-msg.moderator {
-  background: #fff3e0;
-  border-left-color: #f57c00;
+/* ==== Notes ==== */
+#noteArea {
+    min-height: 120px;
+    border: 1px solid #bbb;
+    padding: .5rem;
+    margin-bottom: .5rem;
+    background: #fff;
 }
 
-.chat-msg.visitor {
-  background: #f5f5f5;
-  border-left-color: #757575;
+/* ==== Buttons ==== */
+button {
+    cursor: pointer;
+    background: #0066ff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: .4rem .8rem;
+}
+button:hover {
+    background: #0055dd;
 }
 
-.msg-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.3rem;
-  font-size: 0.85rem;
-  flex-wrap: wrap;
-}
-
-.msg-user {
-  font-weight: bold;
-}
-
-.msg-role {
-  font-size: 0.75rem;
-  opacity: 0.8;
-}
-
-.msg-time {
-  margin-left: auto;
-  opacity: 0.6;
-  font-size: 0.75rem;
-}
-
-.msg-text {
-  word-wrap: break-word;
-}
-
-/* =====================================================
-   FOOTER
-   ===================================================== */
+/* ==== Footer ==== */
 footer {
-  text-align: center;
-  padding: 0.5rem;
-  font-size: 0.8rem;
-  color: #666;
-  background: #eee;
+    font-size: .85rem;
 }
 
-/* =====================================================
-   RESPONSIVE
-   ===================================================== */
-@media (max-width: 600px) {
-  .chat-section { height: calc(100vh - 140px); }
-  .chat-window { height: auto; min-height: 300px; }
-  .user-info { font-size: 0.9rem; }
-  #logoutBtn { padding: 0.3rem 0.6rem; }
+/* ==== Responsiveness ==== */
+@media (min-width: 800px) {
+    main { grid-template-columns: repeat(2, 1fr); }
 }
+@media (min-width: 1200px) {
+    main { grid-template-columns: repeat(3, 1fr); }
+}
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
