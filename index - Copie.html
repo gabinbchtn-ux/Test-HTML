@@ -2,113 +2,54 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Site de partage et messagerie</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morse Code - Firebase</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script>
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "firebase/app";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
+    <div class="container">
+        <h1>🔤 Morse Code Transmitter</h1>
+        
+        <div id="connectionStatus" class="status disconnected">
+            Déconnexion...
+        </div>
+        
+        <div class="morse-display" id="morseDisplay"></div>
+        <div class="message-display" id="messageDisplay">Message: ... --- ...</div>
+        
+        <button class="morse-btn" id="morseBtn">
+            TAP<br>LONG<br>PRESS
+        </button>
+        
+        <div class="controls">
+            <button class="control-btn clear-btn" id="clearBtn">🗑️ Effacer</button>
+            <button class="control-btn send-btn" id="sendBtn">📤 Envoyer</button>
+            <button class="control-btn settings-btn" id="settingsBtn">⚙️ Config</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>📖 Comment utiliser :</h3>
+            <ul>
+                <li><strong>Court appui</strong> (< 300ms) = Point (•)</li>
+                <li><strong>Appui long</strong> (> 300ms) = Tiret (–)</li>
+                <li>Laissez 1 seconde entre les lettres</li>
+                <li>Laissez 3 secondes entre les mots</li>
+            </ul>
+        </div>
+        
+        <div class="firebase-config" id="configPanel" style="display: none;">
+            <h3>⚙️ Configuration Firebase</h3>
+            <input type="text" id="apiKey" placeholder="API Key">
+            <input type="text" id="authDomain" placeholder="Auth Domain">
+            <input type="text" id="projectId" placeholder="Project ID">
+            <input type="text" id="storageBucket" placeholder="Storage Bucket">
+            <button class="control-btn send-btn" onclick="saveConfig()">Sauvegarder</button>
+        </div>
+    </div>
 
-    // Your web app's Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyCFFI_TOzVlWX1GCAZW4tsx-Z80qqgkXpM",
-      authDomain: "partage-e313d.firebaseapp.com",
-      databaseURL: "https://partage-e313d-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "partage-e313d",
-      storageBucket: "partage-e313d.firebasestorage.app",
-      messagingSenderId: "815247760270",
-      appId: "1:815247760270:web:f079ba6b1a8e22439462df"
-};
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-</script>
-<header>
-    <h1> Notre espace partagé</h1>
-    <button id="themeToggle">🌙 Mode sombre</button>
-</header>
-
-<main>
-    <!-- 1️⃣ Chat (local) -->
-    <section class="card" id="chat">
-        <h2>💬 Chat (local)</h2>
-        <div class="chat-window" id="chatWindow"></div>
-        <input type="text" id="chatInput" placeholder="Écrire un message…">
-        <button id="sendBtn">Envoyer</button>
-    </section>
-
-    <!-- 2️⃣ Todo‑list -->
-    <section class="card" id="todo">
-        <h2>✅ Todo‑list</h2>
-        <input type="text" id="newTask" placeholder="Nouvelle tâche…">
-        <button id="addTaskBtn">Ajouter</button>
-        <ul id="taskList"></ul>
-    </section>
-
-    <!-- 3️⃣ Bloc‑notes -->
-    <section class="card" id="notes">
-        <h2>🗒️ Bloc‑notes</h2>
-        <div id="noteArea" contenteditable="true" spellcheck="false"></div>
-        <button id="saveNoteBtn">Enregistrer</button>
-    </section>
-
-    <!-- 4️⃣ Calendrier simple -->
-    <section class="card" id="calendar">
-        <h2>📅 Calendrier</h2>
-        <input type="date" id="eventDate">
-        <input type="text" id="eventDesc" placeholder="Description de l’événement">
-        <button id="addEventBtn">Ajouter</button>
-        <ul id="eventList"></ul>
-    </section>
-
-    <!-- 7️⃣ Compteur de jours -->
-    <section class="card" id="counter">
-        <h2>⏳ Compteur de jours</h2>
-        <label for="targetDate">Date cible :</label>
-        <input type="date" id="targetDate">
-        <button id="calcBtn">Calculer</button>
-        <p id="result"></p>
-    </section>
-
-    <!-- 11️⃣ Recherche interne -->
-    <section class="card" id="search">
-        <h2>🔎 Recherche interne</h2>
-        <input type="text" id="searchBox"
-               placeholder="Rechercher dans notes, tâches, événements…">
-        <ul id="searchResults"></ul>
-    </section>
-
-    <!-- 15️⃣ À faire ce week‑end -->
-    <section class="card" id="weekend">
-        <h2>🗓️ À faire ce week‑end</h2>
-        <button id="showWeekendBtn">Afficher les tâches du week‑end</button>
-        <ul id="weekendList"></ul>
-    </section>
-
-    <!-- 17️⃣ Statistiques d’usage -->
-    <section class="card" id="stats">
-        <h2>📈 Statistiques d’usage</h2>
-        <p>Visites totales : <span id="visitCount">0</span></p>
-    </section>
-</main>
-
-<footer>
-    <small>Créé par Gabin Bucheton.</small>
-</footer>
-
-<script src="app.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
