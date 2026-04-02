@@ -5,6 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Morse Code - Firebase</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Styles d'urgence si le CSS externe ne charge pas */
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            color: black;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 10px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -18,38 +36,31 @@
         <div class="message-display" id="messageDisplay">Message: ... --- ...</div>
         
         <button class="morse-btn" id="morseBtn">
-            TAP<br>LONG<br>PRESS
+            TAP LONG PRESS
         </button>
         
         <div class="controls">
-            <button class="control-btn clear-btn" id="clearBtn">🗑️ Effacer</button>
-            <button class="control-btn send-btn" id="sendBtn">📤 Envoyer</button>
-            <button class="control-btn settings-btn" id="settingsBtn">⚙️ Config</button>
+            <button class="control-btn clear-btn" id="clearBtn">Effacer</button>
+            <button class="control-btn send-btn" id="sendBtn">Envoyer</button>
+            <button class="control-btn settings-btn" id="settingsBtn">Config</button>
         </div>
         
         <div class="instructions">
-            <h3>📖 Comment utiliser :</h3>
+            <h3>Comment utiliser :</h3>
             <ul>
-                <li><strong>Court appui</strong> (< 300ms) = Point (•)</li>
-                <li><strong>Appui long</strong> (> 300ms) = Tiret (–)</li>
+                <li><strong>Court appui</strong> (&lt; 300ms) = Point (•)</li>
+                <li><strong>Appui long</strong> (&gt; 300ms) = Tiret (–)</li>
                 <li>Laissez 1 seconde entre les lettres</li>
-                <li>Laissez 3 secondes entre les mots</li>
             </ul>
         </div>
         
         <div class="firebase-config" id="configPanel" style="display: none;">
-            <h3>⚙️ Configuration Firebase</h3>
+            <h3>Configuration Firebase</h3>
             <input type="text" id="apiKey" placeholder="API Key">
             <input type="text" id="authDomain" placeholder="Auth Domain">
             <input type="text" id="projectId" placeholder="Project ID">
             <input type="text" id="storageBucket" placeholder="Storage Bucket">
             <button class="control-btn send-btn" onclick="saveConfig()">Sauvegarder</button>
         </div>
-    </div>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="script.js"></script>
-</body>
-</html>
+        
+        <div class="d
