@@ -3,59 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Morse Chat - Firebase</title>
+    <title>Morse Chat Firebase</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Écran d'authentification -->
-    <div id="authScreen" class="screen active">
-        <div class="auth-container">
-            <h1>🔐 Accès Morse Chat</h1>
-            <p>Entrez votre code d'accès :</p>
-            <input type="text" id="authCode" placeholder="Code d'accès" maxlength="20">
-            <button id="authBtn">Entrer</button>
-            <p id="authError" class="error"></p>
-        </div>
-    </div>
-
-    <!-- Écran de chat -->
-    <div id="chatScreen" class="screen hidden">
-        <div class="chat-container">
-            <!-- Header -->
-            <div class="chat-header">
-                <div class="user-info">
-                    <span id="userNameDisplay"></span>
-                    <span id="userRoleBadge" class="role-badge"></span>
-                </div>
-                <button id="logoutBtn" class="logout-btn">Déconnexion</button>
+    <div class="container">
+        <h1>🔤 Morse Chat</h1>
+        
+        <!-- Zone de clic morse -->
+        <div class="morse-zone">
+            <div class="morse-area top" id="topArea">
+                <span>CLIQUEZ ICI</span>
+                <small>(Court &lt; 2s)</small>
             </div>
-
-            <!-- Zone de chat -->
-            <div id="chatWindow" class="chat-window">
-                <!-- Messages s'afficheront ici -->
-            </div>
-
-            <!-- Zone de morse -->
-            <div class="morse-section">
-                <div class="morse-display" id="morseDisplay"></div>
-                <div class="message-preview" id="messagePreview">Message: ... --- ...</div>
-                
-                <button class="morse-btn" id="morseBtn">
-                    TAP<br>LONG<br>PRESS
-                </button>
-                
-                <div class="morse-controls">
-                    <button class="control-btn clear-btn" id="clearBtn">Effacer</button>
-                    <button class="control-btn send-btn" id="sendBtn">Envoyer</button>
-                </div>
-            </div>
-
-            <!-- Chat input classique -->
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="Tapez un message...">
-                <button id="sendBtn2" class="send-btn">Envoyer</button>
+            <div class="morse-area bottom" id="bottomArea">
+                <span>MAINTENEZ</span>
+                <small>(Long &gt; 2s)</small>
             </div>
         </div>
+        
+        <!-- Affichage morse -->
+        <div class="display-area">
+            <div class="morse-output" id="morseOutput"></div>
+            <div class="text-output" id="textOutput">Message: ...</div>
+        </div>
+        
+        <!-- Boutons -->
+        <div class="buttons">
+            <button id="clearBtn" class="btn secondary">Effacer</button>
+            <button id="sendBtn" class="btn primary">Envoyer</button>
+        </div>
+        
+        <!-- Chat en temps réel -->
+        <div class="chat-section">
+            <h2>💬 Messages en direct</h2>
+            <div id="chatWindow" class="chat-window"></div>
+        </div>
+        
+        <!-- Status Firebase -->
+        <div id="status" class="status">Connexion...</div>
     </div>
 
     <!-- Firebase SDK -->
