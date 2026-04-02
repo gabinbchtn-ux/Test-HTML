@@ -1,289 +1,76 @@
-// ==================== DEBUG ====================
-function logDebug(message) {
-    const debugEl = document.getElementById('debugText');
-    if (debugEl) {
-        debugEl.textContent = `[${new Date().toLocaleTimeString()}] ${message}\n` + debugEl.textContent;
-    }
-    console.log('[MORSE]', message);
-}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morse Chat - Firebase</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Écran d'authentification -->
+    <div id="authScreen" class="screen active">
+        <div class="auth-container">
+            <h1>🔐 Accès Morse Chat</h1>
+            <p>Entrez votre code d'accès :</p>
+            <input type="text" id="authCode" placeholder="Code d'accès" maxlength="20">
+            <button id="authBtn">Entrer</button>
+            <p id="authError" class="error"></p>
+            
+            <div class="codes-info">
+                <h3>Codes disponibles :</h3>
+                <ul>
+                    <li><strong>89735786637893486</strong> - 👑 Admin</li>
+                    <li><strong>MOD020</strong> - 🛡️ Modérateur</li>
+                    <li><strong>USER843</strong> - 👤 Visiteur</li>
+                    <li><strong>0000</strong> - Testeur</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-// ==================== CONFIGURATION ====================
-const firebaseConfig = {
-    apiKey: "AIzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
-    authDomain: "test-c59b4.firebaseapp.com",
-    databaseURL: "https://test-c59b4-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "test-c59b4",
-    storageBucket: "test-c59b4.firebasestorage.app",
-    messagingSenderId: "249535021863",
-    appId: "1:249535021863:web:43b75f582080b3ee82df02"
-};
+    <!-- Écran de chat -->
+    <div id="chatScreen" class="screen hidden">
+        <div class="chat-container">
+            <!-- Header -->
+            <div class="chat-header">
+                <div class="user-info">
+                    <span id="userNameDisplay"></span>
+                    <span id="userRoleBadge" class="role-badge"></span>
+                </div>
+                <button id="logoutBtn" class="logout-btn">Déconnexion</button>
+            </div>
 
-// ==================== VARIABLES ====================
-let ref = null;
-let db = null;
-let isConnected = false;
+            <!-- Zone de chat -->
+            <div id="chatWindow" class="chat-window">
+                <!-- Messages s'afficheront ici -->
+            </div>
 
-let pressStartTime = 0;
-let currentMorse = "";
-let currentLetter = "";
-let decodedMessage = "";
+            <!-- Zone de morse -->
+            <div class="morse-section">
+                <div class="morse-display" id="morseDisplay"></div>
+                <div class="message-preview" id="messagePreview">Message: ... --- ...</div>
+                
+                <button class="morse-btn" id="morseBtn">
+                    TAP<br>LONG<br>PRESS
+                </button>
+                
+                <div class="morse-controls">
+                    <button class="control-btn clear-btn" id="clearBtn">Effacer</button>
+                    <button class="control-btn send-btn" id="sendBtn">Envoyer</button>
+                </div>
+            </div>
 
-const DOT_DURATION = 300;
+            <!-- Chat input classique -->
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Tapez un message...">
+                <button id="sendBtn2" class="send-btn">Envoyer</button>
+            </div>
+        </div>
+    </div>
 
-// Tableau Morse
-const morseTable = {
-    '.-': 'A', '-...': 'B', '-.-.': 'C', '-..': 'D', '.': 'E',
-    '..-.': 'F', '--.': 'G', '....': 'H', '..': 'I', '.---': 'J',
-    '-.-': 'K', '.-..': 'L', '--': 'M', '-.': 'N', '---': 'O',
-    '.--.': 'P', '--.-': 'Q', '.-.': 'R', '...': 'S', '-': 'T',
-    '..-': 'U', '...-': 'V', '.--': 'W', '-..-': 'X', '-.--': 'Y',
-    '--..': 'Z',
-    '.----': '1', '..---': '2', '...--': '3', '....-': '4', '.....': '5',
-    '-....': '6', '--...': '7', '---..': '8', '----.': '9', '-----': '0',
-    '/': ' '
-};
-
-// ==================== INITIALISATION ====================
-function initFirebase() {
-    logDebug("Initialisation Firebase...");
-    
-    // Vérifier si Firebase est chargé
-    if (typeof firebase === 'undefined') {
-        logDebug("ERREUR: Firebase SDK non chargé!");
-        return;
-    }
-    
-    // Vérifier config
-    if (firebaseConfig.apiKey === "VOTRE_API_KEY_ICI") {
-        logDebug("ATTENTION: Configuration Firebase non modifiée!");
-        logDebug("Connectez-vous à Firebase Console pour obtenir vos clés");
-    }
-    
-    try {
-        db = firebase.initializeApp(firebaseConfig);
-        ref = firebase.database().ref('messages');
-        
-        logDebug("Firebase initialisé avec succès");
-        
-        // Écouter la connexion
-        const connectedRef = firebase.database().ref('.info/connected');
-        connectedRef.on('value', (snapshot) => {
-            if (snapshot.val() === true) {
-                isConnected = true;
-                logDebug("Connecté à Firebase");
-                updateConnectionStatus(true);
-            } else {
-                isConnected = false;
-                logDebug("Déconnecté de Firebase");
-                updateConnectionStatus(false);
-            }
-        });
-    } catch (error) {
-        logDebug("ERREUR Firebase: " + error.message);
-        updateConnectionStatus(false);
-    }
-}
-
-function updateConnectionStatus(connected) {
-    const statusEl = document.getElementById('connectionStatus');
-    if (statusEl) {
-        if (connected) {
-            statusEl.textContent = "🟢 Connecté à Firebase";
-            statusEl.className = "status connected";
-        } else {
-            statusEl.textContent = "🔴 Déconnecté de Firebase";
-            statusEl.className = "status disconnected";
-        }
-    }
-}
-
-// ==================== LOGIQUE MORSE ====================
-function startPress(e) {
-    e.preventDefault();
-    pressStartTime = Date.now();
-    logDebug("Appui commencé");
-    const btn = document.getElementById('morseBtn');
-    if (btn) btn.style.background = '#0056b3';
-}
-
-function endPress(e) {
-    e.preventDefault();
-    const pressDuration = Date.now() - pressStartTime;
-    const btn = document.getElementById('morseBtn');
-    if (btn) btn.style.background = '';
-    
-    logDebug(`Appui terminé: ${pressDuration}ms`);
-    
-    if (pressDuration < DOT_DURATION) {
-        currentLetter += '.';
-        currentMorse += '• ';
-        logDebug("Point détecté (•)");
-    } else {
-        currentLetter += '-';
-        currentMorse += '– ';
-        logDebug("Tiret détecté (–)");
-    }
-    
-    updateDisplay();
-    
-    // Décoder après pause
-    setTimeout(() => {
-        if (currentLetter.length > 0) {
-            decodeLetter();
-        }
-    }, 1000);
-}
-
-function decodeLetter() {
-    if (currentLetter in morseTable) {
-        const letter = morseTable[currentLetter];
-        decodedMessage += letter;
-        currentMorse += letter + ' ';
-        logDebug(`Lettre décodée: ${letter}`);
-    } else {
-        logDebug(`Lettre inconnue: ${currentLetter}`);
-    }
-    currentLetter = "";
-    updateDisplay();
-}
-
-function updateDisplay() {
-    const morseEl = document.getElementById('morseDisplay');
-    const msgEl = document.getElementById('messageDisplay');
-    
-    if (morseEl) morseEl.textContent = currentMorse.trim();
-    if (msgEl) msgEl.textContent = "Message: " + (decodedMessage || "En attente...");
-}
-
-// ==================== ENVOI FIREBASE ====================
-function sendMessage() {
-    logDebug("Tentative d'envoi...");
-    
-    if (!isConnected || !ref) {
-        alert("❌ Firebase non connecté");
-        logDebug("Erreur: Firebase non connecté");
-        return;
-    }
-    
-    if (!decodedMessage) {
-        alert("⚠️ Aucun message à envoyer");
-        logDebug("Erreur: Pas de message");
-        return;
-    }
-    
-    const timestamp = new Date().toISOString();
-    const messageData = {
-        morse: currentMorse,
-        text: decodedMessage,
-        timestamp: timestamp,
-        sender: "Browser"
-    };
-    
-    logDebug("Envoi des données: " + JSON.stringify(messageData));
-    
-    ref.push(messageData)
-        .then(() => {
-            alert("✅ Message envoyé !");
-            logDebug("Message envoyé avec succès");
-            clearAll();
-        })
-        .catch((error) => {
-            logDebug("ERREUR envoi: " + error.message);
-            alert("❌ Erreur d'envoi: " + error.message);
-        });
-}
-
-function clearAll() {
-    currentMorse = "";
-    currentLetter = "";
-    decodedMessage = "";
-    logDebug("Contenu effacé");
-    updateDisplay();
-}
-
-// ==================== ÉVÉNEMENTS ====================
-document.addEventListener('DOMContentLoaded', () => {
-    logDebug("DOM chargé - Initialisation...");
-    
-    // Initialiser Firebase
-    initFirebase();
-    
-    // Vérifier les éléments
-    const btn = document.getElementById('morseBtn');
-    if (!btn) {
-        logDebug("ERREUR: Bouton morseBtn introuvable!");
-        return;
-    }
-    
-    logDebug("Événements attachés au bouton");
-    
-    // Événements souris
-    btn.addEventListener('mousedown', startPress);
-    btn.addEventListener('mouseup', endPress);
-    btn.addEventListener('mouseleave', endPress);
-    
-    // Événements tactile
-    btn.addEventListener('touchstart', startPress, { passive: false });
-    btn.addEventListener('touchend', endPress, { passive: false });
-    
-    // Boutons de contrôle
-    const clearBtn = document.getElementById('clearBtn');
-    const sendBtn = document.getElementById('sendBtn');
-    const settingsBtn = document.getElementById('settingsBtn');
-    
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            logDebug("Bouton Effacer cliqué");
-            clearAll();
-        });
-    }
-    
-    if (sendBtn) {
-        sendBtn.addEventListener('click', () => {
-            logDebug("Bouton Envoyer cliqué");
-            sendMessage();
-        });
-    }
-    
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-            logDebug("Bouton Config cliqué");
-            const panel = document.getElementById('configPanel');
-            if (panel) {
-                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            }
-        });
-    }
-    
-    updateDisplay();
-    logDebug("Initialisation terminée");
-});
-
-// Sauvegarde configuration
-function saveConfig() {
-    logDebug("Sauvegarde configuration...");
-    const config = {
-        apiKey: document.getElementById('apiKey').value,
-        authDomain: document.getElementById('authDomain').value,
-        projectId: document.getElementById('projectId').value,
-        storageBucket: document.getElementById('storageBucket').value
-    };
-    
-    localStorage.setItem('firebaseConfig', JSON.stringify(config));
-    logDebug("Configuration sauvegardée");
-    alert("✅ Configuration sauvegardée ! Rechargez la page.");
-}
-
-// Charger config sauvegardée
-window.onload = function() {
-    const saved = localStorage.getItem('firebaseConfig');
-    if (saved) {
-        try {
-            const config = JSON.parse(saved);
-            Object.assign(firebaseConfig, config);
-            logDebug("Configuration chargée depuis localStorage");
-        } catch (e) {
-            logDebug("Erreur chargement config: " + e.message);
-        }
-    }
-};
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
