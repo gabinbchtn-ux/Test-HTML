@@ -8,7 +8,7 @@ const firebaseConfig = {
     projectId: "test-c59b4",
     storageBucket: "test-c59b4.firebasestorage.app",
     messagingSenderId: "249535021863",
-    appId: "1:249535021863:web:43b75f582080b3ee82df02"
+    appId: "1:249535021863:web:87b75f582080b3ee82df02"
 };
 
 firebase.initializeApp(firebaseConfig);
