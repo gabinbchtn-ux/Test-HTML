@@ -2,10 +2,10 @@
    Remplacez par vos propres valeurs depuis la console Firebase
    ===================================================== */
 const firebaseConfig = {
-    apiKey: "AIzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
+    apiKey: "REzaSyCBOP15Omhn96aRNVsOm-InfcM7YscAkjE",
     authDomain: "test-c59b4.firebaseapp.com",
     databaseURL: "https://test-c59b4-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "test-c59b5",
+    projectId: "test-c59b4",
     storageBucket: "test-c59b4.firebasestorage.app",
     messagingSenderId: "249535021863",
     appId: "1:249535021863:web:43b75f582080b3ee82df02"
